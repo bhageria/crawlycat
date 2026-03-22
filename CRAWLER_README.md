@@ -181,7 +181,6 @@ GUI / Web UI: automatically generated with a timestamped filename (`report_{doma
 | `h1_missing` | medium | No `<h1>` tag |
 | `h1_multiple` | low | More than one `<h1>` tag |
 | `internal_broken_link` | high | Link to an internal page that returned 4xx/5xx |
-| `external_link_found` | info | External link noted (not crawled) |
 | `fetch_failed` | high | Page could not be loaded at all |
 | `robots_blocked` | info | Root URL disallowed by robots.txt |
 | `url_parameter_explosion_skipped` | info | Too many query variants for a path (cap: 5) |

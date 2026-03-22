@@ -10,6 +10,8 @@ Your default browser opens automatically at `http://127.0.0.1:5000`. The Web UI 
 
 > **Prefer a native desktop window?** See the [GUI Guide](GUI-Guide.md) for the tkinter-based alternative with the same feature set.
 
+![Web UI](../screenshots/web-ui.png)
+
 ## Interface layout
 
 The Web UI provides a responsive layout with all controls, a live log, summary panel, and status tabs in one page.

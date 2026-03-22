@@ -68,7 +68,7 @@ def crawl_sse():
 
     def crawl_worker():
         try:
-            results, issues = crawl(
+            results, issues, external_link_notes = crawl(
                 root_url=url,
                 max_pages=max_pages,
                 timeout=timeout,
@@ -94,11 +94,11 @@ def crawl_sse():
                     writer.writerow([i.url, i.issue_type, i.severity, i.details])
 
             report_path = _report_filename(url)
-            write_html_report(report_path, url, results, issues)
+            write_html_report(report_path, url, results, issues, external_link_notes)
 
             # Build summary
-            summary = _build_summary(run_id, results, issues, stopped, report_path)
-            tabs = _build_tabs(results, issues)
+            summary = _build_summary(run_id, results, issues, stopped, report_path, external_link_notes)
+            tabs = _build_tabs(results, issues, external_link_notes)
 
             progress_queue.put(("complete", summary, tabs))
         except Exception as exc:
@@ -158,15 +158,12 @@ def _report_filename(url: str) -> str:
     return f"report_{domain}_{timestamp}.html"
 
 
-def _build_summary(run_id, results, issues, stopped, report_path):
+def _build_summary(run_id, results, issues, stopped, report_path, external_link_notes=None):
     status_counts = Counter(r.status_code for r in results)
     issue_counts = Counter(i.issue_type for i in issues)
 
-    external_marker = "External link found (not crawled): "
-    unique_external = set()
-    for issue in issues:
-        if issue.issue_type == "external_link_found" and external_marker in issue.details:
-            unique_external.add(issue.details.split(external_marker, 1)[1].strip())
+    external_link_notes = external_link_notes or set()
+    unique_external = {ext_url for _, ext_url in external_link_notes}
 
     return {
         "run_id": run_id,
@@ -175,19 +172,26 @@ def _build_summary(run_id, results, issues, stopped, report_path):
         "total_issues": len(issues),
         "status_counts": dict(sorted(status_counts.items())),
         "issue_counts": dict(issue_counts.most_common()),
-        "external_mentions": sum(1 for i in issues if i.issue_type == "external_link_found"),
+        "external_mentions": len(external_link_notes),
         "unique_external": len(unique_external),
         "report_path": report_path,
         "files": ["issues.csv", report_path, "crawl_history.db"],
     }
 
 
-def _build_tabs(results, issues):
+def _build_tabs(results, issues, external_link_notes=None):
+    seo_types = {
+        "meta_title_missing", "meta_title_length",
+        "meta_description_missing", "meta_description_length",
+        "h1_missing", "h1_multiple", "internal_broken_link",
+    }
     tabs = {
         "404": [],
         "415": [],
         "5xx": [],
         "Other 4xx": [],
+        "SEO Issues": [],
+        "Redirects": [],
         "Fetch Failed": [],
         "External Links": [],
     }
@@ -213,16 +217,15 @@ def _build_tabs(results, issues):
     for issue in issues:
         if issue.issue_type == "fetch_failed":
             tabs["Fetch Failed"].append({"code": "FAIL", "url": issue.url})
+        elif issue.issue_type == "redirect":
+            tabs["Redirects"].append({"code": "REDIR", "url": issue.url})
+        elif issue.issue_type in seo_types:
+            tabs["SEO Issues"].append({"code": "SEO", "url": issue.url})
 
     external_links = set()
-    for issue in issues:
-        if issue.issue_type != "external_link_found":
-            continue
-        marker = "External link found (not crawled): "
-        if marker in issue.details:
-            ext_url = issue.details.split(marker, 1)[1].strip()
-            external_links.add(ext_url)
-            issue_details.setdefault(ext_url, []).append(f"Found on: {issue.url}")
+    for source_url, ext_url in (external_link_notes or set()):
+        external_links.add(ext_url)
+        issue_details.setdefault(ext_url, []).append(f"Found on: {source_url}")
 
     for ext_url in sorted(external_links):
         tabs["External Links"].append({"code": "OUT", "url": ext_url})

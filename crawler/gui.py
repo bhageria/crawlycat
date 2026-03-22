@@ -118,7 +118,7 @@ class CrawlerGUI:
         self.details_text.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
 
     def _create_status_tabs(self) -> None:
-        for tab_name in ["404", "415", "5xx", "Other 4xx", "Fetch Failed", "External Links"]:
+        for tab_name in ["404", "415", "5xx", "Other 4xx", "SEO Issues", "Redirects", "Fetch Failed", "External Links"]:
             frame = ttk.Frame(self.status_notebook)
             self.status_notebook.add(frame, text=tab_name)
             listbox = tk.Listbox(frame)
@@ -182,22 +182,26 @@ class CrawlerGUI:
             elif 400 <= code <= 499:
                 self.status_tabs["Other 4xx"].insert(tk.END, line)
 
+        seo_types = {
+            "meta_title_missing", "meta_title_length",
+            "meta_description_missing", "meta_description_length",
+            "h1_missing", "h1_multiple", "internal_broken_link",
+        }
         for issue in self.issues:
             if issue.issue_type == "fetch_failed":
                 self.status_tabs["Fetch Failed"].insert(tk.END, f"FAIL  {issue.url}")
                 self.issue_details_by_url.setdefault(issue.url, []).append(issue.details)
+            elif issue.issue_type == "redirect":
+                self.status_tabs["Redirects"].insert(tk.END, f"REDIR  {issue.url}")
+            elif issue.issue_type in seo_types:
+                self.status_tabs["SEO Issues"].insert(tk.END, f"SEO  {issue.url}")
 
         external_links = set()
-        for issue in self.issues:
-            if issue.issue_type != "external_link_found":
-                continue
-            marker = "External link found (not crawled): "
-            if marker in issue.details:
-                external_url = issue.details.split(marker, 1)[1].strip()
-                external_links.add(external_url)
-                self.issue_details_by_url.setdefault(external_url, []).append(
-                    f"Found on: {issue.url}"
-                )
+        for source_url, ext_url in getattr(self, 'external_link_notes', set()):
+            external_links.add(ext_url)
+            self.issue_details_by_url.setdefault(ext_url, []).append(
+                f"Found on: {source_url}"
+            )
 
         for external_url in sorted(external_links):
             self.status_tabs["External Links"].insert(tk.END, f"OUT  {external_url}")
@@ -274,7 +278,7 @@ class CrawlerGUI:
     def _run_crawl(self, url: str, max_pages: int, timeout: float, fast: bool = False, delay: float = DEFAULT_DELAY) -> None:
         stopped = False
         try:
-            results, issues = crawl(
+            results, issues, external_link_notes = crawl(
                 root_url=url,
                 max_pages=max_pages,
                 timeout=timeout,
@@ -286,6 +290,7 @@ class CrawlerGUI:
             )
             self.results = results
             self.issues = issues
+            self.external_link_notes = external_link_notes
             stopped = self.stop_event.is_set()
 
             conn = sqlite3.connect("crawl_history.db")
@@ -301,7 +306,7 @@ class CrawlerGUI:
                     writer.writerow([i.url, i.issue_type, i.severity, i.details])
 
             report_path = self._report_filename(url)
-            write_html_report(report_path, url, results, issues)
+            write_html_report(report_path, url, results, issues, external_link_notes)
             self.latest_report_path = report_path
 
             self.root.after(0, self._render_summary, run_id, stopped, report_path)
@@ -320,15 +325,9 @@ class CrawlerGUI:
         """Render post-run rollup and status tabs."""
         status_counts = Counter([r.status_code for r in self.results])
         issue_counts = Counter([i.issue_type for i in self.issues])
-        external_marker = "External link found (not crawled): "
-        external_mentions = 0
-        unique_external_urls = set()
-        for issue in self.issues:
-            if issue.issue_type != "external_link_found":
-                continue
-            external_mentions += 1
-            if external_marker in issue.details:
-                unique_external_urls.add(issue.details.split(external_marker, 1)[1].strip())
+        external_link_notes = getattr(self, 'external_link_notes', set())
+        external_mentions = len(external_link_notes)
+        unique_external_urls = {ext_url for _, ext_url in external_link_notes}
 
         status_label = f"Pages: {len(self.results)} | Issues: {len(self.issues)}"
         if stopped:

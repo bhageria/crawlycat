@@ -11,6 +11,8 @@ I run [nerdyelectronics.com](https://nerdyelectronics.com). I wanted a fast way 
 
 ## Screenshots
 
+### GUI
+
 **Launch screen**
 
 ![Launch screen](screenshots/launch.png)
@@ -19,9 +21,11 @@ I run [nerdyelectronics.com](https://nerdyelectronics.com). I wanted a fast way 
 
 ![Crawl in progress](screenshots/run1.png)
 
-**Stopped crawl with summary**
+### Web UI
 
-![Stopped crawl with summary](screenshots/summary1.png)
+**Completed crawl with summary, status tabs, and live log**
+
+![Web UI](screenshots/web-ui.png)
 
 ## Features
 

@@ -82,9 +82,8 @@ Status counts:
   200: 42
   301: 3
   404: 2
-Total issues: 15
+Total issues: 7
 Top issue types:
-  external_link_found: 8
   meta_description_missing: 3
   redirect: 3
   http_4xx: 1

@@ -51,7 +51,7 @@ Links are extracted from crawled HTML pages using these rules:
 A link is considered **internal** if its host (after normalization) matches the root URL's host. Everything else is **external**.
 
 - Internal links are queued for crawling
-- External links are logged as `external_link_found` issues but never crawled
+- External links are listed in the External Links tab but are not treated as issues and are never crawled
 
 **Example:** If the root URL is `https://nerdyelectronics.com`:
 

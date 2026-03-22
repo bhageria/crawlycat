@@ -141,14 +141,6 @@ Every issue found by CrawlyCat has a type, severity, and details string. This pa
 
 ---
 
-### `external_link_found` (info)
-
-**What:** The page contains a link to an external website.
-
-**Why it matters:** This is informational only. External links are not crawled and not checked for errors. They are logged so you can review what external sites you link to.
-
-**Details include:** The external URL and the source page where it was found.
-
 ---
 
 ## Crawl issues

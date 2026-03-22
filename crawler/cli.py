@@ -410,7 +410,7 @@ def _esc(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def write_html_report(path: str, root_url: str, results: List[PageResult], issues: List[Issue]) -> None:
+def write_html_report(path: str, root_url: str, results: List[PageResult], issues: List[Issue], external_link_notes: Optional[set] = None) -> None:
     """Write a self-contained HTML report with tabs, grouped external links, and sortable columns."""
     severity_colors = {
         "critical": "#dc3545",
@@ -434,13 +434,11 @@ def write_html_report(path: str, root_url: str, results: List[PageResult], issue
 
     # Group external links: {external_url: [source_pages]}
     external_links_grouped: dict = {}
-    marker = "External link found (not crawled): "
+    for source_url, ext_url in (external_link_notes or set()):
+        external_links_grouped.setdefault(ext_url, []).append(source_url)
 
     for i in issues:
-        if i.issue_type == "external_link_found":
-            ext_url = i.details.split(marker, 1)[1].strip() if marker in i.details else i.details
-            external_links_grouped.setdefault(ext_url, []).append(i.url)
-        elif i.issue_type == "fetch_failed":
+        if i.issue_type == "fetch_failed":
             tab_fetch_failed.append(i)
         elif i.issue_type == "redirect":
             tab_redirects.append(i)
@@ -528,11 +526,10 @@ def write_html_report(path: str, root_url: str, results: List[PageResult], issue
         tab_panels.append(f'<div class="tab-panel" id="{tid}" style="display:{display}">{content}</div>')
 
     # Summary
-    non_external_issues = [i for i in issues if i.issue_type != "external_link_found"]
     summary_items = [
         f"<li><strong>Pages crawled:</strong> {len(results)}</li>",
         f"<li><strong>Unique pages (200 OK):</strong> {len(unique_pages)}</li>",
-        f"<li><strong>Issues (excl. external links):</strong> {len(non_external_issues)}</li>",
+        f"<li><strong>Issues:</strong> {len(issues)}</li>",
         f"<li><strong>Unique external links:</strong> {len(external_links_grouped)}</li>",
     ]
     for sev in ["critical", "high", "medium", "low"]:
@@ -643,7 +640,7 @@ def crawl(
     stop_event: Optional[threading.Event] = None,
     delay: float = DEFAULT_DELAY,
     respect_robots: bool = True,
-) -> Tuple[List[PageResult], List[Issue]]:
+) -> Tuple[List[PageResult], List[Issue], set]:
     """Crawl internal pages up to max_pages and return results + issues.
 
     When fast=False (default), uses a headless browser (Playwright) to render
@@ -771,15 +768,6 @@ def crawl(
         page_referrers = list(link_sources.get(page.url, set()))
         all_issues.extend(detect_issues(page, incoming_broken_links, page_referrers))
 
-    for source_url, external_url in sorted(external_link_notes):
-        all_issues.append(
-            Issue(
-                source_url,
-                "external_link_found",
-                "info",
-                f"External link found (not crawled): {external_url}",
-            )
-        )
     for source_url, skipped_url in sorted(skipped_internal_notes):
         all_issues.append(
             Issue(
@@ -790,7 +778,7 @@ def crawl(
             )
         )
 
-    return results, all_issues
+    return results, all_issues, external_link_notes
 
 
 def print_summary(results: List[PageResult], issues: List[Issue]) -> None:
@@ -821,7 +809,7 @@ def main() -> None:
     parser.add_argument("--delay", type=float, default=DEFAULT_DELAY, help="Seconds to wait between requests (default 0.5)")
     args = parser.parse_args()
 
-    results, issues = crawl(
+    results, issues, external_link_notes = crawl(
         root_url=args.url,
         max_pages=args.max_pages,
         timeout=args.timeout,
@@ -838,7 +826,7 @@ def main() -> None:
 
     write_csv(args.csv_out, issues)
     if args.html_out:
-        write_html_report(args.html_out, args.url, results, issues)
+        write_html_report(args.html_out, args.url, results, issues, external_link_notes)
     print_summary(results, issues)
     print(f"Run id: {run_id}")
     print(f"Issues CSV: {args.csv_out}")

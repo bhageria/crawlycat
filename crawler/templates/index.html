@@ -116,6 +116,8 @@
   .item-code.ok { color: #28a745; }
   .item-code.out { color: #6c757d; }
   .item-code.fail { color: #fd7e14; }
+  .item-code.seo { color: #ffc107; }
+  .item-code.redir { color: #17a2b8; }
   .item-url { word-break: break-all; }
   .item-url a { color: #0066cc; text-decoration: none; }
   .item-url a:hover { text-decoration: underline; }
@@ -215,7 +217,7 @@ let issueDetails = {};
 const LOG_MAX_LINES = 500;
 let logLineCount = 0;
 
-const TAB_NAMES = ["404", "415", "5xx", "Other 4xx", "Fetch Failed", "External Links"];
+const TAB_NAMES = ["404", "415", "5xx", "Other 4xx", "SEO Issues", "Redirects", "Fetch Failed", "External Links"];
 
 // Init tabs
 (function initTabs() {
@@ -281,11 +283,13 @@ function startCrawl() {
     const data = JSON.parse(e.data);
 
     if (data.type === "progress") {
-      pageCount++;
       document.getElementById("statusUrl").textContent = data.url;
       document.getElementById("statusResult").textContent = data.status;
-      document.getElementById("statusCount").textContent =
-        "Pages: " + pageCount + " | Issues: " + issueCount;
+      if (data.status !== "checking") {
+        pageCount++;
+        document.getElementById("statusCount").textContent =
+          "Pages: " + pageCount + " | Issues: " + issueCount;
+      }
       appendLog(data.status.padStart(12) + "  " + data.url);
     }
     else if (data.type === "complete") {
@@ -379,6 +383,7 @@ function onCrawlComplete(summary, tabsData) {
       div.ondblclick = () => window.open(item.url, "_blank");
 
       const codeClass = item.code === "OUT" ? "out" : item.code === "FAIL" ? "fail" :
+                         item.code === "SEO" ? "seo" : item.code === "REDIR" ? "redir" :
                          item.code >= 200 && item.code < 300 ? "ok" : "";
       div.innerHTML =
         '<span class="item-code ' + codeClass + '">' + item.code + '</span>' +
