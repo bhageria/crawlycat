@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local crawler outputs
+issues.csv
+sample_issues.csv
+report*.html
+crawl_history.db
+sample_crawl_history.db
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
