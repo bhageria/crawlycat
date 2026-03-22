@@ -8,7 +8,7 @@ python -m crawler web
 
 Your default browser opens automatically at `http://127.0.0.1:5000`. The Web UI is a single-page app served entirely from Python (Flask) — no npm, node, or external build tools are needed. The only additional dependency beyond the base crawler is `flask`.
 
-> **Prefer a native desktop window?** See the [[GUI Guide]] for the tkinter-based alternative with the same feature set.
+> **Prefer a native desktop window?** See the [GUI Guide](GUI-Guide.md) for the tkinter-based alternative with the same feature set.
 
 ## Interface layout
 
@@ -94,10 +94,10 @@ Every Web UI crawl produces three files in the current working directory:
 | `report_{domain}_{timestamp}.html` | HTML report (new file each run) |
 | `crawl_history.db` | SQLite database (appended each run) |
 
-See [[Reports]] for details on naming and contents.
+See [Reports](Reports.md) for details on naming and contents.
 
 ## See also
 
-- [[GUI Guide]] for the desktop alternative
-- [[Settings and Configuration]] for what each setting does
-- [[Reports]] for report file format and naming
+- [GUI Guide](GUI-Guide.md) for the desktop alternative
+- [Settings and Configuration](Settings-and-Configuration.md) for what each setting does
+- [Reports](Reports.md) for report file format and naming

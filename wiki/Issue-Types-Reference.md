@@ -191,5 +191,5 @@ Every issue found by CrawlyCat has a type, severity, and details string. This pa
 
 ## See also
 
-- [[Reports]] for how issues appear in output files
-- [[Settings and Configuration]] for crawl behavior settings
+- [Reports](Reports.md) for how issues appear in output files
+- [Settings and Configuration](Settings-and-Configuration.md) for crawl behavior settings

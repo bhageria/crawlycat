@@ -130,7 +130,7 @@ If detected, it waits up to 30 seconds for the challenge to resolve before proce
 
 ## See also
 
-- [[CLI Reference]] for the full argument list
-- [[GUI Guide]] for the desktop interface
-- [[Web UI Guide]] for the browser-based interface
-- [[URL Handling]] for normalization details
+- [CLI Reference](CLI-Reference.md) for the full argument list
+- [GUI Guide](GUI-Guide.md) for the desktop interface
+- [Web UI Guide](Web-UI-Guide.md) for the browser-based interface
+- [URL Handling](URL-Handling.md) for normalization details

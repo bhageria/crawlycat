@@ -89,7 +89,7 @@ Alternatively, set a custom User-Agent (e.g. `CrawlyCat/1.0`) via the CLI `--use
 
 ## Next steps
 
-- [[CLI Reference]] for all command-line options
-- [[GUI Guide]] for the desktop interface
-- [[Web UI Guide]] for the browser-based interface
-- [[Settings and Configuration]] to understand what each setting does
+- [CLI Reference](CLI-Reference.md) for all command-line options
+- [GUI Guide](GUI-Guide.md) for the desktop interface
+- [Web UI Guide](Web-UI-Guide.md) for the browser-based interface
+- [Settings and Configuration](Settings-and-Configuration.md) to understand what each setting does

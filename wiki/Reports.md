@@ -138,5 +138,5 @@ ORDER BY cr.started_at DESC;
 
 ## See also
 
-- [[Issue Types Reference]] for what each issue type means
-- [[CLI Reference]] for output path options
+- [Issue Types Reference](Issue-Types-Reference.md) for what each issue type means
+- [CLI Reference](CLI-Reference.md) for output path options

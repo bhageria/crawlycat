@@ -1,6 +1,6 @@
 # GUI Guide
 
-> **Prefer a browser-based interface?** See the [[Web UI Guide]] for an alternative that runs in your browser with the same features.
+> **Prefer a browser-based interface?** See the [Web UI Guide](Web-UI-Guide.md) for an alternative that runs in your browser with the same features.
 
 Launch the desktop GUI:
 
@@ -115,10 +115,10 @@ Every GUI crawl produces three files in the current working directory:
 | `report_{domain}_{timestamp}.html` | HTML report (new file each run) |
 | `crawl_history.db` | SQLite database (appended each run) |
 
-See [[Reports]] for details on naming and contents.
+See [Reports](Reports.md) for details on naming and contents.
 
 ## See also
 
-- [[Web UI Guide]] for the browser-based alternative
-- [[Settings and Configuration]] for what each setting does
-- [[Reports]] for report file format and naming
+- [Web UI Guide](Web-UI-Guide.md) for the browser-based alternative
+- [Settings and Configuration](Settings-and-Configuration.md) for what each setting does
+- [Reports](Reports.md) for report file format and naming

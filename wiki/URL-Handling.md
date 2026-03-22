@@ -96,9 +96,9 @@ The base path is determined by stripping the query string. So `/products?page=1`
 
 After all other filters, URLs are checked against `robots.txt` rules (if available). Disallowed URLs are skipped and logged as `internal_link_skipped_pattern`.
 
-See [[Settings and Configuration]] for more on robots.txt behavior.
+See [Settings and Configuration](Settings-and-Configuration.md) for more on robots.txt behavior.
 
 ## See also
 
-- [[Issue Types Reference]] for issues related to URL handling
-- [[Settings and Configuration]] for configurable limits
+- [Issue Types Reference](Issue-Types-Reference.md) for issues related to URL handling
+- [Settings and Configuration](Settings-and-Configuration.md) for configurable limits

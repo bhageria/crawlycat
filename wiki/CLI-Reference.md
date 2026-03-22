@@ -3,8 +3,8 @@
 CrawlyCat has three launch modes:
 
 - `python -m crawler --url ... [options]` — **CLI mode** (this page)
-- `python -m crawler gui` — **Desktop GUI** (see [[GUI Guide]])
-- `python -m crawler web` — **Web UI** (see [[Web UI Guide]])
+- `python -m crawler gui` — **Desktop GUI** (see [GUI Guide](GUI-Guide.md))
+- `python -m crawler web` — **Web UI** (see [Web UI Guide](Web-UI-Guide.md))
 
 Run the crawler from the command line:
 
@@ -100,5 +100,5 @@ The CLI runs to completion (or until `--max-pages` is reached). There is no buil
 
 ## See also
 
-- [[Settings and Configuration]] for detailed explanation of each setting
-- [[Reports]] for understanding output files
+- [Settings and Configuration](Settings-and-Configuration.md) for detailed explanation of each setting
+- [Reports](Reports.md) for understanding output files
