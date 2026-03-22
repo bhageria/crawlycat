@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CrawlyCat - Broken Link & SEO Checker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f0f2f5; color: #333; padding: 16px;
+  }
+  .container { max-width: 1400px; margin: 0 auto; }
+
+  h1 { font-size: 1.4em; color: #1a1a2e; margin-bottom: 2px; }
+  .subtitle { color: #666; font-size: 0.85em; margin-bottom: 16px; }
+
+  /* --- Toolbar --- */
+  .toolbar {
+    background: #fff; border-radius: 8px; padding: 12px 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 12px;
+  }
+  .toolbar-row {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    margin-bottom: 8px;
+  }
+  .toolbar-row:last-child { margin-bottom: 0; }
+  .toolbar label { font-weight: 600; font-size: 0.85em; white-space: nowrap; }
+  .toolbar input[type="text"],
+  .toolbar input[type="number"] {
+    border: 1px solid #ccc; border-radius: 4px; padding: 6px 10px;
+    font-size: 0.9em; outline: none;
+  }
+  .toolbar input[type="text"]:focus,
+  .toolbar input[type="number"]:focus {
+    border-color: #4a90d9; box-shadow: 0 0 0 2px rgba(74,144,217,0.2);
+  }
+  .toolbar input[type="checkbox"] { margin-right: 2px; }
+  .field-url { flex: 1; min-width: 250px; }
+  .field-sm { width: 70px; }
+  .field-ua { flex: 1; min-width: 300px; }
+
+  .btn {
+    border: none; border-radius: 4px; padding: 7px 16px; font-size: 0.85em;
+    font-weight: 600; cursor: pointer; transition: background 0.2s;
+  }
+  .btn-start { background: #28a745; color: #fff; }
+  .btn-start:hover { background: #218838; }
+  .btn-stop { background: #dc3545; color: #fff; }
+  .btn-stop:hover { background: #c82333; }
+  .btn-report { background: #17a2b8; color: #fff; }
+  .btn-report:hover { background: #138496; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* --- Panels --- */
+  .panel {
+    background: #fff; border-radius: 8px; padding: 12px 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 12px;
+  }
+  .panel-title {
+    font-size: 0.8em; font-weight: 700; text-transform: uppercase;
+    color: #666; margin-bottom: 8px; letter-spacing: 0.5px;
+  }
+
+  /* --- Live Status --- */
+  .status-grid {
+    display: grid; grid-template-columns: auto 1fr; gap: 4px 12px;
+    font-size: 0.9em;
+  }
+  .status-label { font-weight: 600; color: #555; }
+  .status-value { word-break: break-all; }
+  #statusCount { font-weight: 700; color: #1a1a2e; }
+
+  /* --- Live Log --- */
+  #logPanel {
+    height: 200px; overflow-y: auto; font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 0.82em; background: #1e1e2e; color: #cdd6f4; border-radius: 6px;
+    padding: 10px; white-space: pre; line-height: 1.5;
+  }
+
+  /* --- Summary --- */
+  #summaryPanel {
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 0.82em; white-space: pre-wrap; min-height: 40px;
+    color: #555;
+  }
+
+  /* --- Tabs --- */
+  .tab-bar { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 0; }
+  .tab-btn {
+    padding: 7px 14px; border: 1px solid #ddd; border-bottom: none;
+    background: #e9ecef; cursor: pointer; border-radius: 6px 6px 0 0;
+    font-size: 0.82em; font-weight: 500;
+  }
+  .tab-btn.active {
+    background: #fff; border-bottom: 1px solid #fff; margin-bottom: -1px;
+    font-weight: 700; color: #1a1a2e;
+  }
+  .tab-btn:hover { background: #f8f9fa; }
+  .tab-content {
+    border: 1px solid #ddd; border-radius: 0 6px 6px 6px;
+    background: #fff; min-height: 120px; max-height: 300px;
+    overflow-y: auto;
+  }
+  .tab-pane { display: none; padding: 8px; }
+  .tab-pane.active { display: block; }
+  .tab-pane .item {
+    padding: 5px 8px; font-size: 0.85em; cursor: pointer;
+    border-bottom: 1px solid #f0f0f0; display: flex; gap: 12px;
+  }
+  .tab-pane .item:hover { background: #f8f9fa; }
+  .item-code {
+    font-weight: 700; min-width: 50px; font-family: monospace;
+    color: #dc3545;
+  }
+  .item-code.ok { color: #28a745; }
+  .item-code.out { color: #6c757d; }
+  .item-code.fail { color: #fd7e14; }
+  .item-url { word-break: break-all; }
+  .item-url a { color: #0066cc; text-decoration: none; }
+  .item-url a:hover { text-decoration: underline; }
+  .empty-tab { color: #999; text-align: center; padding: 24px; }
+
+  /* --- Details --- */
+  #detailsPanel {
+    font-size: 0.85em; min-height: 60px; white-space: pre-wrap;
+    color: #555; font-family: 'Cascadia Code', 'Fira Code', monospace;
+  }
+
+  /* --- Layout grid --- */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+  .footer { text-align: center; color: #999; font-size: 0.8em; margin-top: 16px; }
+  .footer a { color: #0066cc; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>CrawlyCat</h1>
+  <p class="subtitle">Broken Link & SEO Checker</p>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-row">
+      <label>URL:</label>
+      <input type="text" id="inputUrl" class="field-url" value="https://example.com" placeholder="https://example.com">
+      <label>Max Pages:</label>
+      <input type="number" id="inputMaxPages" class="field-sm" value="200" min="1">
+      <label>Timeout:</label>
+      <input type="number" id="inputTimeout" class="field-sm" value="15" min="1" step="1">
+      <label>Delay:</label>
+      <input type="number" id="inputDelay" class="field-sm" value="0.5" min="0" step="0.1">
+      <label><input type="checkbox" id="inputFast"> Fast (no JS)</label>
+      <button class="btn btn-start" id="btnStart" onclick="startCrawl()">Start Crawl</button>
+      <button class="btn btn-stop" id="btnStop" onclick="stopCrawl()" disabled>Stop</button>
+      <button class="btn btn-report" id="btnReport" onclick="openReport()" disabled>Open Report</button>
+    </div>
+    <div class="toolbar-row">
+      <label>User-Agent:</label>
+      <input type="text" id="inputUA" class="field-ua" value="{{ default_user_agent }}">
+    </div>
+  </div>
+
+  <!-- Live Status -->
+  <div class="panel">
+    <div class="panel-title">Live Status</div>
+    <div class="status-grid">
+      <span class="status-label">Currently checking:</span>
+      <span class="status-value" id="statusUrl">-</span>
+      <span class="status-label">Result:</span>
+      <span class="status-value" id="statusResult">-</span>
+      <span class="status-label">Progress:</span>
+      <span class="status-value" id="statusCount">Pages: 0 | Issues: 0</span>
+    </div>
+  </div>
+
+  <!-- Log + Summary side by side -->
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-title">Live Log</div>
+      <div id="logPanel"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Summary</div>
+      <div id="summaryPanel">Run a crawl to see the summary.</div>
+    </div>
+  </div>
+
+  <!-- Status Tabs -->
+  <div class="panel">
+    <div class="panel-title">Status Tabs</div>
+    <div class="tab-bar" id="tabBar"></div>
+    <div class="tab-content" id="tabContent"></div>
+  </div>
+
+  <!-- Details -->
+  <div class="panel">
+    <div class="panel-title">Selected URL Details</div>
+    <div id="detailsPanel">Click a URL in the tabs above to see its details.</div>
+  </div>
+
+  <p class="footer">
+    <a href="https://github.com/bhageria/crawlycat" target="_blank">CrawlyCat</a> &mdash;
+    Free & open-source website crawler (GPL v3)
+  </p>
+</div>
+
+<script>
+let eventSource = null;
+let reportPath = null;
+let pageCount = 0;
+let issueCount = 0;
+let issueDetails = {};
+const LOG_MAX_LINES = 500;
+let logLineCount = 0;
+
+const TAB_NAMES = ["404", "415", "5xx", "Other 4xx", "Fetch Failed", "External Links"];
+
+// Init tabs
+(function initTabs() {
+  const bar = document.getElementById("tabBar");
+  const content = document.getElementById("tabContent");
+  TAB_NAMES.forEach((name, idx) => {
+    const btn = document.createElement("button");
+    btn.className = "tab-btn" + (idx === 0 ? " active" : "");
+    btn.textContent = name + " (0)";
+    btn.onclick = () => switchTab(name);
+    btn.id = "tabBtn-" + name;
+    bar.appendChild(btn);
+
+    const pane = document.createElement("div");
+    pane.className = "tab-pane" + (idx === 0 ? " active" : "");
+    pane.id = "tabPane-" + name;
+    pane.innerHTML = '<div class="empty-tab">No items.</div>';
+    content.appendChild(pane);
+  });
+})();
+
+function switchTab(name) {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
+  document.getElementById("tabBtn-" + name).classList.add("active");
+  document.getElementById("tabPane-" + name).classList.add("active");
+}
+
+function startCrawl() {
+  const url = document.getElementById("inputUrl").value.trim();
+  if (!url) { alert("Please enter a URL."); return; }
+
+  // Reset UI
+  pageCount = 0; issueCount = 0; logLineCount = 0;
+  reportPath = null; issueDetails = {};
+  document.getElementById("logPanel").textContent = "";
+  document.getElementById("summaryPanel").textContent = "Crawling...";
+  document.getElementById("statusUrl").textContent = "-";
+  document.getElementById("statusResult").textContent = "-";
+  document.getElementById("statusCount").textContent = "Pages: 0 | Issues: 0";
+  document.getElementById("detailsPanel").textContent = "Click a URL in the tabs above to see its details.";
+  TAB_NAMES.forEach(name => {
+    document.getElementById("tabPane-" + name).innerHTML = '<div class="empty-tab">No items.</div>';
+    document.getElementById("tabBtn-" + name).textContent = name + " (0)";
+  });
+
+  document.getElementById("btnStart").disabled = true;
+  document.getElementById("btnStop").disabled = false;
+  document.getElementById("btnReport").disabled = true;
+
+  const params = new URLSearchParams({
+    url: url,
+    max_pages: document.getElementById("inputMaxPages").value,
+    timeout: document.getElementById("inputTimeout").value,
+    delay: document.getElementById("inputDelay").value,
+    fast: document.getElementById("inputFast").checked ? "true" : "false",
+    user_agent: document.getElementById("inputUA").value.trim(),
+  });
+
+  eventSource = new EventSource("/api/crawl?" + params.toString());
+
+  eventSource.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+
+    if (data.type === "progress") {
+      pageCount++;
+      document.getElementById("statusUrl").textContent = data.url;
+      document.getElementById("statusResult").textContent = data.status;
+      document.getElementById("statusCount").textContent =
+        "Pages: " + pageCount + " | Issues: " + issueCount;
+      appendLog(data.status.padStart(12) + "  " + data.url);
+    }
+    else if (data.type === "complete") {
+      onCrawlComplete(data.summary, data.tabs);
+    }
+    else if (data.type === "error") {
+      document.getElementById("summaryPanel").textContent = "Error: " + data.message;
+      onCrawlFinished();
+    }
+  };
+
+  eventSource.onerror = function() {
+    if (eventSource) { eventSource.close(); eventSource = null; }
+    onCrawlFinished();
+  };
+}
+
+function stopCrawl() {
+  fetch("/api/stop", { method: "POST" });
+  document.getElementById("btnStop").disabled = true;
+  appendLog("--- Stop requested, finishing current page... ---");
+}
+
+function openReport() {
+  if (reportPath) window.open("/api/report/" + reportPath, "_blank");
+}
+
+function appendLog(text) {
+  const log = document.getElementById("logPanel");
+  log.textContent += text + "\n";
+  logLineCount++;
+  if (logLineCount > LOG_MAX_LINES) {
+    const lines = log.textContent.split("\n");
+    log.textContent = lines.slice(lines.length - LOG_MAX_LINES).join("\n");
+    logLineCount = LOG_MAX_LINES;
+  }
+  log.scrollTop = log.scrollHeight;
+}
+
+function onCrawlComplete(summary, tabsData) {
+  if (eventSource) { eventSource.close(); eventSource = null; }
+  reportPath = summary.report_path;
+  issueDetails = tabsData.issue_details || {};
+
+  // Summary
+  const lines = [];
+  lines.push("Run id: " + summary.run_id);
+  lines.push("Status: " + (summary.stopped ? "STOPPED by user" : "completed"));
+  lines.push("Pages crawled: " + summary.pages_crawled);
+  lines.push("Total issues: " + summary.total_issues);
+  lines.push("");
+  lines.push("Status counts:");
+  for (const [code, count] of Object.entries(summary.status_counts)) {
+    lines.push("  " + code + ": " + count);
+  }
+  lines.push("");
+  lines.push("External links:");
+  lines.push("  mentions: " + summary.external_mentions);
+  lines.push("  unique: " + summary.unique_external);
+  lines.push("");
+  lines.push("Issue types:");
+  for (const [type, count] of Object.entries(summary.issue_counts)) {
+    lines.push("  " + type + ": " + count);
+  }
+  lines.push("");
+  lines.push("Saved files:");
+  summary.files.forEach(f => lines.push("  " + f));
+
+  document.getElementById("summaryPanel").textContent = lines.join("\n");
+  document.getElementById("statusCount").textContent =
+    "Pages: " + summary.pages_crawled + " | Issues: " + summary.total_issues +
+    (summary.stopped ? " (stopped)" : "");
+
+  // Tabs
+  const tabs = tabsData.tabs;
+  TAB_NAMES.forEach(name => {
+    const items = tabs[name] || [];
+    const pane = document.getElementById("tabPane-" + name);
+    const btn = document.getElementById("tabBtn-" + name);
+    btn.textContent = name + " (" + items.length + ")";
+
+    if (items.length === 0) {
+      pane.innerHTML = '<div class="empty-tab">No items.</div>';
+      return;
+    }
+    pane.innerHTML = "";
+    items.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "item";
+      div.onclick = () => showDetails(item.url);
+      div.ondblclick = () => window.open(item.url, "_blank");
+
+      const codeClass = item.code === "OUT" ? "out" : item.code === "FAIL" ? "fail" :
+                         item.code >= 200 && item.code < 300 ? "ok" : "";
+      div.innerHTML =
+        '<span class="item-code ' + codeClass + '">' + item.code + '</span>' +
+        '<span class="item-url"><a href="' + escHtml(item.url) + '" target="_blank" onclick="event.stopPropagation()">' +
+        escHtml(item.url) + '</a></span>';
+      pane.appendChild(div);
+    });
+  });
+
+  onCrawlFinished();
+}
+
+function onCrawlFinished() {
+  document.getElementById("btnStart").disabled = false;
+  document.getElementById("btnStop").disabled = true;
+  if (reportPath) document.getElementById("btnReport").disabled = false;
+}
+
+function showDetails(url) {
+  const details = issueDetails[url] || [];
+  const panel = document.getElementById("detailsPanel");
+  if (details.length === 0) {
+    panel.textContent = "URL: " + url + "\nNo issue details recorded.";
+    return;
+  }
+  panel.textContent = "URL: " + url + "\n\n" + details.map(d => "- " + d).join("\n");
+}
+
+function escHtml(text) {
+  return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+</script>
+</body>
+</html>

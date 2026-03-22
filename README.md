@@ -23,6 +23,17 @@ I run [nerdyelectronics.com](https://nerdyelectronics.com). I wanted a fast way 
 
 ![Stopped crawl with summary](screenshots/summary1.png)
 
+## Features
+
+- **Browser mode** (default) — headless Chromium via Playwright; handles JavaScript-rendered pages and bypasses Cloudflare/bot-protection challenges
+- **Fast mode** — raw HTTP requests via httpx; ~10x faster for static sites
+- **Web UI** — browser-based interface with live log, status tabs, and SSE updates (Flask, no npm/node required)
+- **GUI** — tkinter desktop app with live progress, status tabs, stop button, and one-click HTML report
+- **CLI** for scripting, CI pipelines, and scheduled runs
+- Configurable rate limiting, timeout, and custom User-Agent
+- Respects `robots.txt` automatically
+- CSV, HTML, and SQLite report output
+
 ## What it checks
 
 - `4xx` / `5xx` HTTP status errors
@@ -60,16 +71,24 @@ python -m playwright install chromium
 
 ## Usage
 
-### GUI
+### Web UI
 
 ```bash
-python -m crawler.gui
+python -m crawler web
+```
+
+Opens your browser at `http://127.0.0.1:5000` with a full-featured interface: live log, status tabs, summary panel, and start/stop controls.
+
+### GUI (desktop)
+
+```bash
+python -m crawler gui
 ```
 
 ### CLI
 
 ```bash
-python -m crawler --url https://example.com --max-pages 200
+python -m crawler --url https://example.com --max-pages 200 --html-out report.html
 ```
 
 ## Clean repo policy

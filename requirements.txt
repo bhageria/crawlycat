@@ -2,3 +2,4 @@ httpx
 beautifulsoup4
 playwright
 playwright-stealth
+flask

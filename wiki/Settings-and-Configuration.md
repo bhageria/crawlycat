@@ -10,7 +10,7 @@ The starting point of the crawl. The crawler will discover and follow internal l
 - Only pages on the **same domain** as this URL are crawled
 - External links are logged but never followed
 - CLI: `--url https://example.com`
-- GUI: **URL** field
+- GUI / Web UI: **URL** field
 
 ### Max Pages
 
@@ -21,7 +21,7 @@ The maximum number of pages the crawler will visit.
 - Set lower (e.g. 50) for a quick scan, higher (e.g. 500+) for a full audit
 - Default: **200**
 - CLI: `--max-pages 200`
-- GUI: **Max Pages** field
+- GUI / Web UI: **Max Pages** field
 
 ### Timeout
 
@@ -33,7 +33,7 @@ How long to wait for a single page to respond before giving up.
 - Increase for slow sites (e.g. 30); decrease for fast sites (e.g. 5)
 - Default: **15 seconds**
 - CLI: `--timeout 15`
-- GUI: **Timeout** field
+- GUI / Web UI: **Timeout** field
 
 ### Delay
 
@@ -45,7 +45,7 @@ Seconds to wait between consecutive requests (rate limiting).
 - Set to `2.0` or higher for gentle crawling of sensitive sites
 - Default: **0.5 seconds**
 - CLI: `--delay 0.5`
-- GUI: **Delay** field
+- GUI / Web UI: **Delay** field
 
 ### Fast mode (no JS)
 
@@ -62,7 +62,7 @@ Controls whether the crawler uses a headless browser or raw HTTP requests.
 | **Best for** | Sites with JS rendering or bot protection | Static sites, quick scans, CI pipelines |
 
 - CLI: `--fast` flag
-- GUI: **Fast (no JS)** checkbox
+- GUI / Web UI: **Fast (no JS)** checkbox
 
 ### User-Agent
 
@@ -76,7 +76,7 @@ Changing this is useful if:
 Default: `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36`
 
 - CLI: `--user-agent "custom string"`
-- GUI: not exposed (uses default)
+- GUI / Web UI: **User-Agent** field
 
 ## Robots.txt
 
@@ -85,6 +85,8 @@ The crawler automatically fetches and honors `robots.txt` before crawling. This 
 - If the root URL is disallowed by `robots.txt`, the crawl returns immediately with a `robots_blocked` issue
 - Internal links disallowed by `robots.txt` are silently skipped
 - If `robots.txt` cannot be fetched (404, timeout, etc.), it is ignored and all URLs are allowed
+
+The `robots.txt` request uses the crawler's configured User-Agent (not Python's default `Python-urllib` agent), so it is not blocked by services like Cloudflare Browser Integrity Check.
 
 This behavior cannot be disabled. Respecting `robots.txt` is considered good practice and prevents crawling paths the site owner has explicitly restricted.
 
@@ -130,4 +132,5 @@ If detected, it waits up to 30 seconds for the challenge to resolve before proce
 
 - [[CLI Reference]] for the full argument list
 - [[GUI Guide]] for the desktop interface
+- [[Web UI Guide]] for the browser-based interface
 - [[URL Handling]] for normalization details

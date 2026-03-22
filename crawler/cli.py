@@ -26,6 +26,7 @@ from playwright_stealth import Stealth
 
 DEFAULT_TIMEOUT = 15.0
 DEFAULT_DELAY = 0.5
+CRAWLYCAT_USER_AGENT = "CrawlyCat/1.0 (+https://github.com/bhageria/crawlycat)"
 DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -150,13 +151,25 @@ def parse_page_fields(html: str) -> Tuple[str, str, int]:
 
 
 def fetch_robots(root_url: str, user_agent: str) -> Optional[RobotFileParser]:
-    """Fetch and parse robots.txt for the given root URL. Returns None on failure."""
+    """Fetch and parse robots.txt for the given root URL. Returns None on failure.
+
+    Uses httpx with the crawler's user-agent instead of urllib (which sends
+    ``Python-urllib/X.Y`` and gets blocked by Cloudflare Browser Integrity Check).
+    """
     parsed = urlparse(root_url)
     robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
-    rp = RobotFileParser()
-    rp.set_url(robots_url)
     try:
-        rp.read()
+        resp = httpx.get(
+            robots_url,
+            headers={**DEFAULT_HEADERS, "User-Agent": user_agent},
+            timeout=10,
+            follow_redirects=True,
+        )
+        if resp.status_code != 200:
+            return None
+        rp = RobotFileParser()
+        rp.set_url(robots_url)
+        rp.parse(resp.text.splitlines())
         return rp
     except Exception:
         return None

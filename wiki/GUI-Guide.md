@@ -1,9 +1,11 @@
 # GUI Guide
 
-Launch the GUI:
+> **Prefer a browser-based interface?** See the [[Web UI Guide]] for an alternative that runs in your browser with the same features.
+
+Launch the desktop GUI:
 
 ```bash
-python -m crawler.gui
+python -m crawler gui
 ```
 
 ## Interface layout
@@ -12,7 +14,7 @@ The GUI window has these sections from top to bottom:
 
 ### Toolbar
 
-The top bar contains all input fields and controls:
+The top row contains input fields and controls:
 
 | Control | Description |
 |---------|-------------|
@@ -24,6 +26,12 @@ The top bar contains all input fields and controls:
 | **Start Crawl** | Begins the crawl |
 | **Stop** | Stops the crawl after the current page finishes |
 | **Open Report** | Opens the latest HTML report in your browser |
+
+The second row contains:
+
+| Control | Description |
+|---------|-------------|
+| **User-Agent** | The User-Agent string sent with every request. Defaults to a Chrome browser string. Change to a custom value (e.g. `CrawlyCat/1.0`) for your own sites where you've allowlisted it in Cloudflare or similar services. |
 
 ### Live Status
 
@@ -85,12 +93,17 @@ This is useful for large crawls where you've already seen enough data.
 ## Using the Open Report button
 
 After a crawl completes, the **Open Report** button becomes active. Click it to open the HTML report in your default web browser. The report includes:
-- Sortable columns (click any header)
-- Text search filter
-- Severity dropdown filter
-- Color-coded severity badges
 
-The report is a self-contained HTML file you can share with anyone.
+- **Tabbed categories** — 404, 5xx, Other 4xx, SEO Issues, Redirects, Fetch Failed, External Links
+- **Grouped external links** — deduplicated by URL with source page count (instead of one row per occurrence)
+- **Summary bar** — pages crawled, unique pages (200 OK), issue count, unique external links, severity badges
+- **Sortable columns** — click any header to sort ascending/descending
+- **Severity sorting** — sorts by severity rank (critical first), not alphabetically
+- **Color-coded severity badges** — critical (red), high (orange), medium (yellow), low (blue), info (gray)
+- **Clickable URLs** — click any URL to open it in a new tab
+- **Footer link** — links back to the CrawlyCat GitHub repo
+
+The report is a self-contained HTML file you can share with anyone — no server or dependencies needed.
 
 ## Output files
 
@@ -106,5 +119,6 @@ See [[Reports]] for details on naming and contents.
 
 ## See also
 
+- [[Web UI Guide]] for the browser-based alternative
 - [[Settings and Configuration]] for what each setting does
 - [[Reports]] for report file format and naming

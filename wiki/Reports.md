@@ -17,7 +17,7 @@ A simple comma-separated file with all issues found. Good for importing into spr
 
 **CLI:** Always generated. Default path: `issues.csv`. Change with `--csv-out`.
 
-**GUI:** Always generated as `issues.csv` in the current directory. Overwritten each run.
+**GUI / Web UI:** Always generated as `issues.csv` in the current directory. Overwritten each run.
 
 ## HTML report
 
@@ -25,12 +25,12 @@ A self-contained HTML file you can open in any browser and share with anyone. No
 
 ### Features
 
-- **Color-coded severity badges** - critical (red), high (orange), medium (yellow), low (blue), info (gray)
+- **Tabbed categories** - issues are grouped into tabs matching the GUI: 404, 5xx, Other 4xx, SEO Issues, Redirects, Fetch Failed, External Links
+- **Grouped external links** - instead of one row per occurrence, external links are deduplicated by URL showing the number of source pages where each was found (with links to up to 10 source pages)
+- **Summary bar** - pages crawled, unique pages (200 OK), issue count (excluding external links), unique external link count, and severity badges
 - **Sortable columns** - click any column header to sort ascending/descending
 - **Severity sorting** - sorts by severity rank (critical first), not alphabetically
-- **Text search** - filter rows by typing in the search box
-- **Severity filter** - dropdown to show only issues of a specific severity
-- **Summary bar** - page count, issue count, and severity breakdown at the top
+- **Color-coded severity badges** - critical (red), high (orange), medium (yellow), low (blue), info (gray)
 - **Clickable URLs** - click any URL to open it in a new tab
 - **Footer link** - links back to the CrawlyCat GitHub repo
 
@@ -42,7 +42,7 @@ A self-contained HTML file you can open in any browser and share with anyone. No
 python -m crawler --url https://example.com --html-out report.html
 ```
 
-**GUI:** Automatically generated with a timestamped name:
+**GUI / Web UI:** Automatically generated with a timestamped name:
 
 ```
 report_{domain}_{date}_{time}.html
@@ -63,10 +63,11 @@ report_{domain}_{date}_{time}.html
 report_nerdyelectronics_com_2026-03-22_143015.html
 ```
 
-Each GUI crawl creates a **new file** (never overwrites previous reports), so you keep a history of all runs.
+Each GUI / Web UI crawl creates a **new file** (never overwrites previous reports), so you keep a history of all runs.
 
 ### Opening reports
 
+- **Web UI:** Click the **Open Report** button after a crawl completes; opens the report in a new browser tab
 - **GUI:** Click the **Open Report** button after a crawl completes
 - **CLI:** Open the file in your browser manually
 - **Sharing:** Send the `.html` file to anyone; it works offline with no dependencies
@@ -124,7 +125,7 @@ ORDER BY cr.started_at DESC;
 
 **CLI:** Default path: `crawl_history.db`. Change with `--db-path`.
 
-**GUI:** Always saved as `crawl_history.db` in the current directory.
+**GUI / Web UI:** Always saved as `crawl_history.db` in the current directory.
 
 ## Which report to use
 
@@ -133,7 +134,7 @@ ORDER BY cr.started_at DESC;
 | Share findings with a non-technical person | HTML report |
 | Import into a spreadsheet or script | CSV |
 | Track issues over time across multiple runs | SQLite database |
-| Quick review after a crawl | GUI summary and status tabs |
+| Quick review after a crawl | GUI or Web UI summary and status tabs |
 
 ## See also
 

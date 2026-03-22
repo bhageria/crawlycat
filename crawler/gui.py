@@ -71,6 +71,13 @@ class CrawlerGUI:
         self.report_btn = ttk.Button(top, text="Open Report", command=self.open_report, state=tk.DISABLED)
         self.report_btn.pack(side=tk.LEFT)
 
+        # Second row: User-Agent
+        top2 = ttk.Frame(self.root)
+        top2.pack(fill=tk.X, padx=8, pady=(0, 8))
+        ttk.Label(top2, text="User-Agent:").pack(side=tk.LEFT)
+        self.ua_var = tk.StringVar(value=DEFAULT_USER_AGENT)
+        ttk.Entry(top2, textvariable=self.ua_var, width=100).pack(side=tk.LEFT, padx=(6, 0), fill=tk.X, expand=True)
+
         main_pane = ttk.Panedwindow(self.root, orient=tk.VERTICAL)
         main_pane.pack(fill=tk.BOTH, expand=True, padx=8, pady=(0, 8))
 
@@ -271,7 +278,7 @@ class CrawlerGUI:
                 root_url=url,
                 max_pages=max_pages,
                 timeout=timeout,
-                user_agent=DEFAULT_USER_AGENT,
+                user_agent=self.ua_var.get().strip() or DEFAULT_USER_AGENT,
                 progress_callback=self._on_progress,
                 fast=fast,
                 stop_event=self.stop_event,

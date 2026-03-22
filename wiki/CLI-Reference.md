@@ -1,5 +1,11 @@
 # CLI Reference
 
+CrawlyCat has three launch modes:
+
+- `python -m crawler --url ... [options]` — **CLI mode** (this page)
+- `python -m crawler gui` — **Desktop GUI** (see [[GUI Guide]])
+- `python -m crawler web` — **Web UI** (see [[Web UI Guide]])
+
 Run the crawler from the command line:
 
 ```bash
