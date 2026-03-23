@@ -1,31 +1,38 @@
-# CrawlyCat
+# CrawlyCat 🐱
 
-A free, open-source website crawler that checks for broken links, HTTP errors, redirect chains, and on-page SEO issues.
+⚡ Crawl any website and instantly find broken links, errors, and SEO issues — locally, no SaaS.
+
+👉 Built for developers who want fast, no-BS site audits.
 
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)
 ![License: GPL v3](https://img.shields.io/badge/license-GPL%20v3-blue.svg)
 ![Issues Welcome](https://img.shields.io/badge/issues-welcome-brightgreen.svg)
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
 
-I run [nerdyelectronics.com](https://nerdyelectronics.com). I wanted a fast way to check broken links, technical issues, and general SEO health without paying for expensive tooling, so I built this primarily for myself. Sharing it publicly in case it is useful to others too.
+![CrawlyCat demo](screenshots/crawlycat.gif)
 
-## Screenshots
+## Why CrawlyCat?
 
-### GUI
+| | CrawlyCat | Screaming Frog | SaaS crawlers |
+|---|---|---|---|
+| Runs locally | ✅ | ✅ | ❌ |
+| No page limits | ✅ | ❌ (500 free) | ❌ (credits) |
+| JS-heavy sites (Playwright) | ✅ | ✅ | Varies |
+| CLI + GUI + Web UI | ✅ | ❌ | ❌ |
+| Open source | ✅ | ❌ | ❌ |
+| Simple setup | ✅ | ❌ | ✅ |
+| Handles Cloudflare | ✅ | ❌ | ❌ |
 
-**Launch screen**
+If Screaming Frog feels heavy or restrictive, CrawlyCat is a lightweight, developer-friendly alternative. No enterprise complexity, no credits, no limits.
 
-![Launch screen](screenshots/launch.png)
+## What it finds
 
-**Crawl in progress**
-
-![Crawl in progress](screenshots/run1.png)
-
-### Web UI
-
-**Completed crawl with summary, status tabs, and live log**
-
-![Web UI](screenshots/web-ui.png)
+- `4xx` / `5xx` HTTP status errors
+- Redirect chains
+- Missing or malformed title and meta descriptions
+- Missing or multiple `<h1>` tags
+- Internal broken link references
+- External links (noted, not crawled)
 
 ## Features
 
@@ -37,15 +44,6 @@ I run [nerdyelectronics.com](https://nerdyelectronics.com). I wanted a fast way 
 - Configurable rate limiting, timeout, and custom User-Agent
 - Respects `robots.txt` automatically
 - CSV, HTML, and SQLite report output
-
-## What it checks
-
-- `4xx` / `5xx` HTTP status errors
-- Redirect chains
-- Missing or malformed title and meta descriptions
-- Missing or multiple `<h1>` tags
-- Internal broken link references
-- External links (noted, not crawled)
 
 ## Quick start
 
@@ -94,6 +92,16 @@ python -m crawler gui
 ```bash
 python -m crawler --url https://example.com --max-pages 200 --html-out report.html
 ```
+
+## More screenshots
+
+**GUI — launch screen**
+
+![Launch screen](screenshots/launch.png)
+
+**GUI — crawl in progress**
+
+![Crawl in progress](screenshots/run1.png)
 
 ## Clean repo policy
 
