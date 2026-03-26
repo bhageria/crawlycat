@@ -62,20 +62,46 @@
     color: #666; margin-bottom: 8px; letter-spacing: 0.5px;
   }
 
-  /* --- Live Status --- */
-  .status-grid {
-    display: grid; grid-template-columns: auto 1fr; gap: 4px 12px;
-    font-size: 0.9em;
+  /* --- Overview Dashboard --- */
+  .overview-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px; margin-bottom: 0;
   }
-  .status-label { font-weight: 600; color: #555; }
-  .status-value { word-break: break-all; }
-  #statusCount { font-weight: 700; color: #1a1a2e; }
+  .stat-card {
+    background: #f8f9fa; border-radius: 8px; padding: 14px 16px;
+    text-align: center; border: 1px solid #e9ecef;
+    transition: border-color 0.2s;
+  }
+  .stat-card.active { border-color: #4a90d9; }
+  .stat-card .stat-value {
+    font-size: 1.6em; font-weight: 800; color: #1a1a2e;
+    line-height: 1.2;
+  }
+  .stat-card .stat-label {
+    font-size: 0.75em; color: #888; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-top: 4px; font-weight: 600;
+  }
+  .stat-card .stat-value.green { color: #28a745; }
+  .stat-card .stat-value.red { color: #dc3545; }
+  .stat-card .stat-value.orange { color: #fd7e14; }
+  .stat-card .stat-value.blue { color: #17a2b8; }
+
+  /* --- Currently checking bar --- */
+  .checking-bar {
+    font-size: 0.82em; color: #666; padding: 6px 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .checking-bar strong { color: #333; }
 
   /* --- Live Log --- */
   #logPanel {
     height: 200px; overflow-y: auto; font-family: 'Cascadia Code', 'Fira Code', monospace;
     font-size: 0.82em; background: #1e1e2e; color: #cdd6f4; border-radius: 6px;
-    padding: 10px; white-space: pre; line-height: 1.5;
+    padding: 10px; line-height: 1.5; overflow-x: hidden;
+  }
+  .log-line {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: block;
   }
 
   /* --- Summary --- */
@@ -154,6 +180,7 @@
       <label>Delay:</label>
       <input type="number" id="inputDelay" class="field-sm" value="0.5" min="0" step="0.1">
       <label><input type="checkbox" id="inputFast"> Fast (no JS)</label>
+      <label><input type="checkbox" id="inputCheckResources"> Check Resources</label>
       <button class="btn btn-start" id="btnStart" onclick="startCrawl()">Start Crawl</button>
       <button class="btn btn-stop" id="btnStop" onclick="stopCrawl()" disabled>Stop</button>
       <button class="btn btn-report" id="btnReport" onclick="openReport()" disabled>Open Report</button>
@@ -164,17 +191,36 @@
     </div>
   </div>
 
-  <!-- Live Status -->
+  <!-- Overview Dashboard -->
   <div class="panel">
-    <div class="panel-title">Live Status</div>
-    <div class="status-grid">
-      <span class="status-label">Currently checking:</span>
-      <span class="status-value" id="statusUrl">-</span>
-      <span class="status-label">Result:</span>
-      <span class="status-value" id="statusResult">-</span>
-      <span class="status-label">Progress:</span>
-      <span class="status-value" id="statusCount">Pages: 0 | Issues: 0</span>
+    <div class="panel-title">Overview</div>
+    <div class="overview-grid">
+      <div class="stat-card" id="cardPages">
+        <div class="stat-value blue" id="statPages">0</div>
+        <div class="stat-label">Pages Crawled</div>
+      </div>
+      <div class="stat-card" id="cardLinks">
+        <div class="stat-value" id="statLinksFound">0</div>
+        <div class="stat-label">Links Found</div>
+      </div>
+      <div class="stat-card" id="cardChecked">
+        <div class="stat-value" id="statLinksChecked">0</div>
+        <div class="stat-label">Links Checked</div>
+      </div>
+      <div class="stat-card" id="cardIssues">
+        <div class="stat-value red" id="statIssues">0</div>
+        <div class="stat-label">Issues</div>
+      </div>
+      <div class="stat-card" id="cardExternal">
+        <div class="stat-value orange" id="statExternal">0</div>
+        <div class="stat-label">External Links</div>
+      </div>
+      <div class="stat-card" id="cardStatus">
+        <div class="stat-value green" id="statStatus">Idle</div>
+        <div class="stat-label">Status</div>
+      </div>
     </div>
+    <div class="checking-bar" id="checkingBar">Ready to crawl.</div>
   </div>
 
   <!-- Log + Summary side by side -->
@@ -213,11 +259,14 @@ let eventSource = null;
 let reportPath = null;
 let pageCount = 0;
 let issueCount = 0;
+let linksFound = 0;
+let linksChecked = 0;
+let externalCount = 0;
 let issueDetails = {};
 const LOG_MAX_LINES = 500;
 let logLineCount = 0;
 
-const TAB_NAMES = ["404", "415", "5xx", "Other 4xx", "SEO Issues", "Redirects", "Fetch Failed", "External Links"];
+const TAB_NAMES = ["404", "415", "5xx", "Other 4xx", "SEO Issues", "Broken Resources", "Redirects", "Fetch Failed", "External Links"];
 
 // Init tabs
 (function initTabs() {
@@ -251,13 +300,18 @@ function startCrawl() {
   if (!url) { alert("Please enter a URL."); return; }
 
   // Reset UI
-  pageCount = 0; issueCount = 0; logLineCount = 0;
-  reportPath = null; issueDetails = {};
-  document.getElementById("logPanel").textContent = "";
+  pageCount = 0; issueCount = 0; linksFound = 0; linksChecked = 0; externalCount = 0;
+  logLineCount = 0; reportPath = null; issueDetails = {};
+  document.getElementById("logPanel").innerHTML = "";
   document.getElementById("summaryPanel").textContent = "Crawling...";
-  document.getElementById("statusUrl").textContent = "-";
-  document.getElementById("statusResult").textContent = "-";
-  document.getElementById("statusCount").textContent = "Pages: 0 | Issues: 0";
+  document.getElementById("statPages").textContent = "0";
+  document.getElementById("statLinksFound").textContent = "0";
+  document.getElementById("statLinksChecked").textContent = "0";
+  document.getElementById("statIssues").textContent = "0";
+  document.getElementById("statExternal").textContent = "0";
+  document.getElementById("statStatus").textContent = "Crawling";
+  document.getElementById("statStatus").className = "stat-value blue";
+  document.getElementById("checkingBar").textContent = "Starting crawl...";
   document.getElementById("detailsPanel").textContent = "Click a URL in the tabs above to see its details.";
   TAB_NAMES.forEach(name => {
     document.getElementById("tabPane-" + name).innerHTML = '<div class="empty-tab">No items.</div>';
@@ -274,6 +328,7 @@ function startCrawl() {
     timeout: document.getElementById("inputTimeout").value,
     delay: document.getElementById("inputDelay").value,
     fast: document.getElementById("inputFast").checked ? "true" : "false",
+    check_resources: document.getElementById("inputCheckResources").checked ? "true" : "false",
     user_agent: document.getElementById("inputUA").value.trim(),
   });
 
@@ -283,14 +338,56 @@ function startCrawl() {
     const data = JSON.parse(e.data);
 
     if (data.type === "progress") {
-      document.getElementById("statusUrl").textContent = data.url;
-      document.getElementById("statusResult").textContent = data.status;
-      if (data.status !== "checking") {
-        pageCount++;
-        document.getElementById("statusCount").textContent =
-          "Pages: " + pageCount + " | Issues: " + issueCount;
+      const status = data.status;
+      const url = data.url;
+
+      // Update checking bar
+      if (url) {
+        document.getElementById("checkingBar").innerHTML =
+          "<strong>Checking:</strong> " + escHtml(url);
       }
-      appendLog(data.status.padStart(12) + "  " + data.url);
+
+      // Parse "links:queued:external" — sent after discovering links on a page
+      const linksMatch = status.match(/^links:(\d+):(\d+)$/);
+      if (linksMatch) {
+        linksFound = parseInt(linksMatch[1]);
+        externalCount = parseInt(linksMatch[2]);
+        document.getElementById("statLinksFound").textContent = linksFound;
+        document.getElementById("statExternal").textContent = externalCount;
+        // Don't log this internal message
+      }
+      // Parse resource progress like "resources: 50/1334"
+      else if (status.match(/^resources:\s*(\d+)\/(\d+)/)) {
+        const resMatch = status.match(/^resources:\s*(\d+)\/(\d+)/);
+        linksChecked = pageCount + parseInt(resMatch[1]);
+        document.getElementById("statLinksChecked").textContent = linksChecked;
+        document.getElementById("checkingBar").innerHTML =
+          "<strong>Checking resources:</strong> " + resMatch[1] + " / " + resMatch[2] + (url ? " — " + escHtml(url) : "");
+        appendLog(status, url);
+      } else if (status === "checking") {
+        document.getElementById("statLinksChecked").textContent = linksChecked;
+      } else if (status.startsWith("checking ")) {
+        // resource check start message like "checking 1334 resource URLs..."
+        const totalMatch = status.match(/checking (\d+) resource/);
+        if (totalMatch) {
+          const totalRes = parseInt(totalMatch[1]);
+          linksFound += totalRes;
+          document.getElementById("statLinksFound").textContent = linksFound;
+          document.getElementById("checkingBar").textContent = "Checking " + totalRes + " resource URLs...";
+        }
+        appendLog(status, url);
+      } else if (!status.startsWith("resource check complete")) {
+        // A page result (status code or fetch_failed)
+        pageCount++;
+        linksChecked++;
+        document.getElementById("statPages").textContent = pageCount;
+        document.getElementById("statLinksChecked").textContent = linksChecked;
+        appendLog(status, url);
+      } else {
+        // resource check complete
+        document.getElementById("checkingBar").textContent = status;
+        appendLog(status, url);
+      }
     }
     else if (data.type === "complete") {
       onCrawlComplete(data.summary, data.tabs);
@@ -310,20 +407,25 @@ function startCrawl() {
 function stopCrawl() {
   fetch("/api/stop", { method: "POST" });
   document.getElementById("btnStop").disabled = true;
-  appendLog("--- Stop requested, finishing current page... ---");
+  appendLog("--- Stop requested, finishing current page... ---", "");
 }
 
 function openReport() {
   if (reportPath) window.open("/api/report/" + reportPath, "_blank");
 }
 
-function appendLog(text) {
+function appendLog(status, url) {
   const log = document.getElementById("logPanel");
-  log.textContent += text + "\n";
+  const line = document.createElement("span");
+  line.className = "log-line";
+  line.textContent = (status || "").padStart(12) + "  " + (url || "");
+  line.title = url || "";  // full URL on hover
+  log.appendChild(line);
   logLineCount++;
   if (logLineCount > LOG_MAX_LINES) {
-    const lines = log.textContent.split("\n");
-    log.textContent = lines.slice(lines.length - LOG_MAX_LINES).join("\n");
+    while (log.children.length > LOG_MAX_LINES) {
+      log.removeChild(log.firstChild);
+    }
     logLineCount = LOG_MAX_LINES;
   }
   log.scrollTop = log.scrollHeight;
@@ -359,9 +461,16 @@ function onCrawlComplete(summary, tabsData) {
   summary.files.forEach(f => lines.push("  " + f));
 
   document.getElementById("summaryPanel").textContent = lines.join("\n");
-  document.getElementById("statusCount").textContent =
-    "Pages: " + summary.pages_crawled + " | Issues: " + summary.total_issues +
-    (summary.stopped ? " (stopped)" : "");
+
+  // Update dashboard with final values
+  document.getElementById("statPages").textContent = summary.pages_crawled;
+  document.getElementById("statIssues").textContent = summary.total_issues;
+  document.getElementById("statExternal").textContent = summary.unique_external || 0;
+  document.getElementById("statStatus").textContent = summary.stopped ? "Stopped" : "Done";
+  document.getElementById("statStatus").className = "stat-value " + (summary.stopped ? "orange" : "green");
+  document.getElementById("checkingBar").textContent = summary.stopped
+    ? "Crawl stopped by user."
+    : "Crawl complete. " + summary.pages_crawled + " pages, " + summary.total_issues + " issues found.";
 
   // Tabs
   const tabs = tabsData.tabs;

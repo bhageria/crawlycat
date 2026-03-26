@@ -62,6 +62,9 @@ class CrawlerGUI:
         self.fast_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(top, text="Fast (no JS)", variable=self.fast_var).pack(side=tk.LEFT, padx=(6, 10))
 
+        self.check_resources_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(top, text="Check Resources", variable=self.check_resources_var).pack(side=tk.LEFT, padx=(6, 10))
+
         self.start_btn = ttk.Button(top, text="Start Crawl", command=self.start_crawl)
         self.start_btn.pack(side=tk.LEFT, padx=(0, 4))
 
@@ -248,10 +251,11 @@ class CrawlerGUI:
         self.stop_btn.config(state=tk.NORMAL)
 
         fast = self.fast_var.get()
+        check_resources = self.check_resources_var.get()
 
         self.worker = threading.Thread(
             target=self._run_crawl,
-            args=(url, max_pages, timeout, fast, delay),
+            args=(url, max_pages, timeout, fast, delay, check_resources),
             daemon=True,
         )
         self.worker.start()
@@ -275,7 +279,7 @@ class CrawlerGUI:
         self.stop_btn.config(state=tk.DISABLED)
         self._append_log("--- Stop requested, finishing current page... ---")
 
-    def _run_crawl(self, url: str, max_pages: int, timeout: float, fast: bool = False, delay: float = DEFAULT_DELAY) -> None:
+    def _run_crawl(self, url: str, max_pages: int, timeout: float, fast: bool = False, delay: float = DEFAULT_DELAY, check_resources: bool = False) -> None:
         stopped = False
         try:
             results, issues, external_link_notes = crawl(
@@ -287,6 +291,7 @@ class CrawlerGUI:
                 fast=fast,
                 stop_event=self.stop_event,
                 delay=delay,
+                check_resources=check_resources,
             )
             self.results = results
             self.issues = issues

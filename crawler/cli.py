@@ -118,6 +118,47 @@ def extract_links(base_url: str, html: str) -> List[str]:
     return links
 
 
+# Tags and their URL-bearing attributes for resource extraction.
+_RESOURCE_TAG_ATTRS = [
+    ("img", "src"),
+    ("img", "srcset"),
+    ("script", "src"),
+    ("link", "href"),
+    ("source", "src"),
+    ("source", "srcset"),
+    ("video", "src"),
+    ("video", "poster"),
+    ("audio", "src"),
+    ("iframe", "src"),
+    ("object", "data"),
+    ("embed", "src"),
+]
+
+
+def extract_resource_urls(base_url: str, html: str) -> List[str]:
+    """Extract URLs of page resources (images, scripts, stylesheets, etc.)."""
+    soup = BeautifulSoup(html, "html.parser")
+    urls: List[str] = []
+    for tag_name, attr in _RESOURCE_TAG_ATTRS:
+        for tag in soup.find_all(tag_name, attrs={attr: True}):
+            raw = tag.get(attr, "")
+            if not raw:
+                continue
+            # srcset contains comma-separated entries like "url 2x, url 3x"
+            if attr == "srcset":
+                for entry in raw.split(","):
+                    parts = entry.strip().split()
+                    if parts:
+                        absolute = urljoin(base_url, parts[0])
+                        if absolute.startswith(("http://", "https://")):
+                            urls.append(normalize_url(absolute))
+            else:
+                absolute = urljoin(base_url, raw)
+                if absolute.startswith(("http://", "https://")):
+                    urls.append(normalize_url(absolute))
+    return urls
+
+
 def split_internal_external_links(
     links: List[str],
     root_domain: str,
@@ -431,6 +472,7 @@ def write_html_report(path: str, root_url: str, results: List[PageResult], issue
     tab_seo = []
     tab_fetch_failed = []
     tab_redirects = []
+    tab_resources = []
 
     # Group external links: {external_url: [source_pages]}
     external_links_grouped: dict = {}
@@ -450,6 +492,8 @@ def write_html_report(path: str, root_url: str, results: List[PageResult], issue
                 tab_404.append(i)
             else:
                 tab_other_4xx.append(i)
+        elif i.issue_type.startswith("resource_"):
+            tab_resources.append(i)
         elif i.issue_type in {
             "meta_title_missing", "meta_title_length",
             "meta_description_missing", "meta_description_length",
@@ -513,6 +557,7 @@ def write_html_report(path: str, root_url: str, results: List[PageResult], issue
         ("tab-4xx", f"Other 4xx ({len(tab_other_4xx)})", _issue_table(tab_other_4xx, "tbl4xx")),
         ("tab-seo", f"SEO Issues ({len(tab_seo)})", _issue_table(tab_seo, "tblSeo")),
         ("tab-redirects", f"Redirects ({len(tab_redirects)})", _issue_table(tab_redirects, "tblRedir")),
+        ("tab-resources", f"Broken Resources ({len(tab_resources)})", _issue_table(tab_resources, "tblRes")),
         ("tab-failed", f"Fetch Failed ({len(tab_fetch_failed)})", _issue_table(tab_fetch_failed, "tblFail")),
         ("tab-ext", f"External Links ({len(external_links_grouped)})", _external_links_table()),
     ]
@@ -640,6 +685,7 @@ def crawl(
     stop_event: Optional[threading.Event] = None,
     delay: float = DEFAULT_DELAY,
     respect_robots: bool = True,
+    check_resources: bool = False,
 ) -> Tuple[List[PageResult], List[Issue], set]:
     """Crawl internal pages up to max_pages and return results + issues.
 
@@ -651,6 +697,7 @@ def crawl(
     partial results collected so far.
     delay controls seconds to wait between requests (default 0.5).
     respect_robots controls whether robots.txt rules are honored (default True).
+    check_resources checks linked resources (images, scripts, CSS, etc.) for broken URLs.
     """
     root = normalize_url(root_url)
     root_domain = urlparse(root).netloc
@@ -738,6 +785,10 @@ def crawl(
                         queued.add(link)
                         queue.append(link)
 
+                if progress_callback:
+                    unique_ext = {ext_url for _, ext_url in external_link_notes}
+                    progress_callback(page.url, f"links:{len(queued)}:{len(unique_ext)}")
+
     if fast:
         headers = {**DEFAULT_HEADERS, "User-Agent": user_agent}
         with httpx.Client(
@@ -756,6 +807,47 @@ def crawl(
             context.close()
             browser.close()
             pw.stop()
+
+    # --- Resource checking (images, scripts, CSS, etc.) ---
+    resource_results: Set[str] = set()  # already-checked resource URLs
+    if check_resources:
+        all_resource_urls: List[Tuple[str, str]] = []  # (page_url, resource_url)
+        for page in results:
+            if page.status_code == 200 and "text/html" in page.content_type.lower():
+                for res_url in extract_resource_urls(page.final_url, page.html):
+                    if res_url not in resource_results:
+                        all_resource_urls.append((page.url, res_url))
+                        resource_results.add(res_url)
+
+        if progress_callback:
+            progress_callback("", f"checking {len(all_resource_urls)} resource URLs...")
+
+        headers = {**DEFAULT_HEADERS, "User-Agent": user_agent}
+        with httpx.Client(follow_redirects=True, timeout=timeout, headers=headers) as rc:
+            for i, (source_page, res_url) in enumerate(all_resource_urls):
+                if stop_event and stop_event.is_set():
+                    break
+                try:
+                    resp = rc.head(res_url)
+                    # Some servers don't support HEAD; fall back to GET.
+                    if resp.status_code == 405:
+                        resp = rc.get(res_url)
+                    status = resp.status_code
+                except httpx.HTTPError:
+                    status = 0
+
+                if progress_callback and (i + 1) % 20 == 0:
+                    progress_callback(res_url, f"resources: {i + 1}/{len(all_resource_urls)}")
+
+                if status == 0:
+                    all_issues.append(Issue(source_page, "resource_fetch_failed", "high",
+                                            f"Resource failed to load: {res_url}"))
+                elif 400 <= status <= 599:
+                    all_issues.append(Issue(source_page, f"resource_{status}", "high" if status == 404 else "medium",
+                                            f"Resource returned {status}: {res_url}"))
+
+        if progress_callback:
+            progress_callback("", f"resource check complete ({len(all_resource_urls)} URLs)")
 
     broken_targets = {r.url for r in results if 400 <= r.status_code <= 599}
     for page in results:
@@ -807,6 +899,7 @@ def main() -> None:
     parser.add_argument("--user-agent", default=DEFAULT_USER_AGENT, help="Crawler user-agent string")
     parser.add_argument("--fast", action="store_true", help="Use raw HTTP requests instead of headless browser (faster but cannot bypass JS challenges)")
     parser.add_argument("--delay", type=float, default=DEFAULT_DELAY, help="Seconds to wait between requests (default 0.5)")
+    parser.add_argument("--check-resources", action="store_true", help="Check resource URLs (images, CSS, JS, etc.) for broken links")
     args = parser.parse_args()
 
     results, issues, external_link_notes = crawl(
@@ -816,6 +909,7 @@ def main() -> None:
         user_agent=args.user_agent,
         fast=args.fast,
         delay=args.delay,
+        check_resources=args.check_resources,
     )
 
     conn = sqlite3.connect(args.db_path)
