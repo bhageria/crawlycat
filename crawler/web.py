@@ -221,7 +221,7 @@ def _build_tabs(results, issues, external_link_notes=None):
         if issue.issue_type == "fetch_failed":
             tabs["Fetch Failed"].append({"code": "FAIL", "url": issue.url})
         elif issue.issue_type == "redirect":
-            tabs["Redirects"].append({"code": "REDIR", "url": issue.url})
+            tabs["Redirects"].append({"code": "REDIR", "url": issue.url, "details": issue.details})
         elif issue.issue_type.startswith("resource_"):
             # Extract status code from type like "resource_404" or use "FAIL"
             res_code = issue.issue_type.replace("resource_", "").upper()

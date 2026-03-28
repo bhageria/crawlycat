@@ -88,8 +88,6 @@ def normalize_url(url: str) -> str:
     if netloc.startswith("www."):
         netloc = netloc[4:]
     path = parsed.path or "/"
-    if path != "/" and path.endswith("/"):
-        path = path[:-1]
     normalized_query_pairs: List[Tuple[str, str]] = []
     for key, value in parse_qsl(parsed.query, keep_blank_values=True):
         lower_key = key.lower()
@@ -332,14 +330,10 @@ def detect_issues(
 
     if result.redirect_count > 0:
         severity = "medium" if result.redirect_count == 1 else "high"
-        issues.append(
-            Issue(
-                result.url,
-                "redirect",
-                severity,
-                f"Redirect chain ({result.redirect_count}): {result.redirect_chain}",
-            )
-        )
+        details = f"Redirect chain ({result.redirect_count}): {result.redirect_chain} → {result.final_url}"
+        if referrers:
+            details += f" | Found on: {', '.join(sorted(referrers)[:5])}"
+        issues.append(Issue(result.url, "redirect", severity, details))
 
     if status == 200 and "text/html" in result.content_type.lower():
         title_len = len(result.title)

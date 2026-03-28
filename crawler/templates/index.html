@@ -147,6 +147,7 @@
   .item-url { word-break: break-all; }
   .item-url a { color: #0066cc; text-decoration: none; }
   .item-url a:hover { text-decoration: underline; }
+  .item-sub { font-size: 0.82em; color: #888; margin-top: 2px; }
   .empty-tab { color: #999; text-align: center; padding: 24px; }
 
   /* --- Details --- */
@@ -494,10 +495,25 @@ function onCrawlComplete(summary, tabsData) {
       const codeClass = item.code === "OUT" ? "out" : item.code === "FAIL" ? "fail" :
                          item.code === "SEO" ? "seo" : item.code === "REDIR" ? "redir" :
                          item.code >= 200 && item.code < 300 ? "ok" : "";
+
+      let detailsHtml = "";
+      if (item.details) {
+        // Parse "Redirect chain (1): 301 → https://final-url | Found on: https://source"
+        const foundOnMatch = item.details.match(/Found on: (.+)$/);
+        const arrowMatch = item.details.match(/→\s*(https?:\/\/\S+)/);
+        const parts = [];
+        if (arrowMatch) parts.push('→ <a href="' + escHtml(arrowMatch[1]) + '" target="_blank" onclick="event.stopPropagation()">' + escHtml(arrowMatch[1]) + '</a>');
+        if (foundOnMatch) {
+          const sources = foundOnMatch[1].split(", ");
+          parts.push('Linked from: ' + sources.map(s => '<a href="' + escHtml(s.trim()) + '" target="_blank" onclick="event.stopPropagation()">' + escHtml(s.trim()) + '</a>').join(", "));
+        }
+        if (parts.length) detailsHtml = '<div class="item-sub">' + parts.join(' &nbsp;|&nbsp; ') + '</div>';
+      }
+
       div.innerHTML =
         '<span class="item-code ' + codeClass + '">' + item.code + '</span>' +
         '<span class="item-url"><a href="' + escHtml(item.url) + '" target="_blank" onclick="event.stopPropagation()">' +
-        escHtml(item.url) + '</a></span>';
+        escHtml(item.url) + '</a>' + detailsHtml + '</span>';
       pane.appendChild(div);
     });
   });
